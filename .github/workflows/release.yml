@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing Git tag to package and publish
+        description: Draft release tag to package and publish
         required: true
         type: string
 
@@ -20,10 +20,18 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      - name: Resolve draft release source
+        id: draft-release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "ref=$(gh release view "$RELEASE_TAG" --json targetCommitish --jq .targetCommitish)" >> "$GITHUB_OUTPUT"
+
       - name: Check out release tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && steps.draft-release.outputs.ref || github.ref }}
 
       - name: Build release assets
         run: |
