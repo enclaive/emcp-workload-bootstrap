@@ -46,7 +46,7 @@ Consume immutable release artifacts, never a mutable branch. A release should
 contain a tarball and `SHA256SUMS`, for example:
 
 ```text
-0.0.2/
+0.0.5/
   enclaive-workload-bootstrap.tar.gz
   SHA256SUMS
 ```
@@ -54,16 +54,16 @@ contain a tarball and `SHA256SUMS`, for example:
 Cloud-init should download and verify the selected version before extracting:
 
 ```bash
-VERSION="0.0.2"
+VERSION="0.0.5"
 BASE_URL="https://github.com/enclaive/emcp-workload-bootstrap/releases/download/$VERSION"
 
 install -d -m 0755 /enclaive-cloud-init/bootstrap
 curl --fail --show-error --location "$BASE_URL/enclaive-workload-bootstrap.tar.gz" \
-  --output /enclaive-cloud-init/bootstrap/bootstrap.tar.gz
+  --output /enclaive-cloud-init/bootstrap/enclaive-workload-bootstrap.tar.gz
 curl --fail --show-error --location "$BASE_URL/SHA256SUMS" \
   --output /enclaive-cloud-init/bootstrap/SHA256SUMS
 (cd /enclaive-cloud-init/bootstrap && sha256sum --check SHA256SUMS)
-tar -xzf /enclaive-cloud-init/bootstrap/bootstrap.tar.gz -C /enclaive-cloud-init/bootstrap
+tar -xzf /enclaive-cloud-init/bootstrap/enclaive-workload-bootstrap.tar.gz -C /enclaive-cloud-init/bootstrap
 ```
 
 Pushing a Git tag runs the release workflow, which creates a draft release,

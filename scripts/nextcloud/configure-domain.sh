@@ -4,10 +4,14 @@
 # Reconcile Nextcloud's persisted public-domain settings after a snapshot
 # restore. Source this file after defining echo_message and DOMAIN_NAME.
 configure_nextcloud_domain() {
-  local max_retries=30
+  local max_retries=150
   local retry=0
 
-  until docker exec --user www-data nextcloud php occ status >/dev/null 2>&1; do
+  # `occ status` exits successfully before initial installation and reports
+  # `installed: false`. Wait for the completed installation, not merely for
+  # the container to accept an `occ` command.
+  until docker exec --user www-data nextcloud php occ status --output=json 2>/dev/null | \
+    jq -e '.installed == true' >/dev/null 2>&1; do
     retry=$((retry + 1))
     if [ "$retry" -ge "$max_retries" ]; then
       echo_message "Nextcloud did not become ready to update its public domain"
