@@ -1,0 +1,70 @@
+# Enclaive Workload Bootstrap
+
+Reusable shell snippets for Enclaive workload provisioning and snapshot
+restoration. The repository is public: do not add credentials, Vault tokens,
+tenant identifiers, generated domains, or private service addresses.
+
+## Layout
+
+```text
+scripts/
+  lib/          Shared shell helpers
+  nextcloud/    Nextcloud provisioning and restore helpers
+  database/     Database provisioning and restore helpers
+  opendesk/     OpenDesk provisioning and restore helpers
+manifests/      Release manifests and checksums
+tests/shellcheck/ ShellCheck fixtures and tests
+.github/workflows/ Release automation
+```
+
+## Nextcloud domain reconciliation
+
+`scripts/nextcloud/configure-domain.sh` defines
+`configure_nextcloud_domain`. Source it from the workload bootstrap after
+defining `DOMAIN_NAME` and `echo_message`, then call the function after the
+Nextcloud container starts:
+
+```bash
+DOMAIN_NAME="nextcloud.example.com"
+
+echo_message() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] bootstrap: $1"
+}
+
+source /opt/enclaive-bootstrap/scripts/nextcloud/configure-domain.sh
+docker compose up -d
+configure_nextcloud_domain
+```
+
+The helper waits for `occ`, then updates the persisted Nextcloud configuration
+for the restored domain. This is required because the official image applies
+`NEXTCLOUD_TRUSTED_DOMAINS` only during initial installation.
+
+## Releases
+
+Consume immutable release artifacts, never a mutable branch. A release should
+contain a tarball and `SHA256SUMS`, for example:
+
+```text
+v1.0.0/
+  enclaive-workload-bootstrap.tar.gz
+  SHA256SUMS
+```
+
+Cloud-init should download and verify the selected version before extracting:
+
+```bash
+VERSION="v1.0.0"
+BASE_URL="https://github.com/enclaive/enclaive-workload-bootstrap/releases/download/$VERSION"
+
+curl --fail --show-error --location "$BASE_URL/enclaive-workload-bootstrap.tar.gz" \
+  --output /tmp/enclaive-workload-bootstrap.tar.gz
+curl --fail --show-error --location "$BASE_URL/SHA256SUMS" \
+  --output /tmp/SHA256SUMS
+(cd /tmp && sha256sum --check SHA256SUMS)
+install -d -m 0755 /opt/enclaive-bootstrap
+tar -xzf /tmp/enclaive-workload-bootstrap.tar.gz -C /opt/enclaive-bootstrap
+```
+
+Runtime configuration and secrets must remain in the workload's vHSM/Vault
+rendered files. Scripts may read those files but must not embed their contents.
