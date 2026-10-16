@@ -66,10 +66,12 @@ curl --fail --show-error --location "$BASE_URL/SHA256SUMS" \
 tar -xzf /enclaive-cloud-init/bootstrap/bootstrap.tar.gz -C /enclaive-cloud-init/bootstrap
 ```
 
-Pushing a Git tag runs the release workflow, which packages `scripts/`, writes
-`SHA256SUMS`, and uploads both files to the matching GitHub release. Use
-**Actions → Release bootstrap bundle → Run workflow** with an existing tag to
-populate assets for a release that was created before the workflow existed.
+Pushing a Git tag runs the release workflow, which creates a draft release,
+packages `scripts/`, writes `SHA256SUMS`, uploads both files, and then publishes
+the release. This draft-first order is required because published releases are
+immutable. Use **Actions → Release bootstrap bundle → Run workflow** with an
+existing tag to publish its assets. A published immutable release with missing
+assets must be deleted and recreated before running the workflow.
 
 Runtime configuration and secrets must remain in the workload's vHSM/Vault
 rendered files. Scripts may read those files but must not embed their contents.
