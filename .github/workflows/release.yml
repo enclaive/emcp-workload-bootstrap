@@ -36,7 +36,9 @@ jobs:
       - name: Build release assets
         run: |
           mkdir dist
-          tar --exclude-vcs -czf dist/enclaive-workload-bootstrap.tar.gz scripts
+          tar --exclude-vcs --sort=name --mtime='UTC 1970-01-01' \
+            --owner=0 --group=0 --numeric-owner -cf - scripts | \
+            gzip -n > dist/enclaive-workload-bootstrap.tar.gz
           (
             cd dist
             sha256sum enclaive-workload-bootstrap.tar.gz > SHA256SUMS

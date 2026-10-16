@@ -76,3 +76,17 @@ running the workflow.
 
 Runtime configuration and secrets must remain in the workload's vHSM/Vault
 rendered files. Scripts may read those files but must not embed their contents.
+
+## Webhook lifecycle events
+
+`scripts/lib/webhook-events.sh` sends installation lifecycle events. It accepts
+`installation_completed_event` or `installation_failed_event` and reads the
+workload-specific endpoint from `WEBHOOK_URL` at runtime:
+
+```bash
+WEBHOOK_URL="$WEBHOOK_URL" \
+  /enclaive-cloud-init/bootstrap/scripts/lib/webhook-events.sh installation_completed_event
+```
+
+Keep the URL in the rendered cloud-init configuration or another runtime-only
+file. Do not add it to this public repository or a release artifact.
