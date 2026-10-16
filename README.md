@@ -46,7 +46,7 @@ Consume immutable release artifacts, never a mutable branch. A release should
 contain a tarball and `SHA256SUMS`, for example:
 
 ```text
-0.0.1/
+0.0.2/
   enclaive-workload-bootstrap.tar.gz
   SHA256SUMS
 ```
@@ -54,7 +54,7 @@ contain a tarball and `SHA256SUMS`, for example:
 Cloud-init should download and verify the selected version before extracting:
 
 ```bash
-VERSION="0.0.1"
+VERSION="0.0.2"
 BASE_URL="https://github.com/enclaive/emcp-workload-bootstrap/releases/download/$VERSION"
 
 install -d -m 0755 /enclaive-cloud-init/bootstrap
@@ -65,6 +65,11 @@ curl --fail --show-error --location "$BASE_URL/SHA256SUMS" \
 (cd /enclaive-cloud-init/bootstrap && sha256sum --check SHA256SUMS)
 tar -xzf /enclaive-cloud-init/bootstrap/bootstrap.tar.gz -C /enclaive-cloud-init/bootstrap
 ```
+
+Pushing a Git tag runs the release workflow, which packages `scripts/`, writes
+`SHA256SUMS`, and uploads both files to the matching GitHub release. Use
+**Actions → Release bootstrap bundle → Run workflow** with an existing tag to
+populate assets for a release that was created before the workflow existed.
 
 Runtime configuration and secrets must remain in the workload's vHSM/Vault
 rendered files. Scripts may read those files but must not embed their contents.

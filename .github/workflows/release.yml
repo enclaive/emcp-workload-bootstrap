@@ -1,0 +1,47 @@
+name: Release bootstrap bundle
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing Git tag to package and publish
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Build release assets
+        run: |
+          mkdir dist
+          tar --exclude-vcs -czf dist/enclaive-workload-bootstrap.tar.gz scripts
+          (
+            cd dist
+            sha256sum enclaive-workload-bootstrap.tar.gz > SHA256SUMS
+          )
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" \
+            dist/enclaive-workload-bootstrap.tar.gz \
+            dist/SHA256SUMS \
+            --clobber
