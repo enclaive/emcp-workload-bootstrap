@@ -31,7 +31,7 @@ echo_message() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] bootstrap: $1"
 }
 
-source /opt/enclaive-bootstrap/scripts/nextcloud/configure-domain.sh
+source /enclaive-cloud-init/bootstrap/scripts/nextcloud/configure-domain.sh
 docker compose up -d
 configure_nextcloud_domain
 ```
@@ -46,7 +46,7 @@ Consume immutable release artifacts, never a mutable branch. A release should
 contain a tarball and `SHA256SUMS`, for example:
 
 ```text
-v1.0.0/
+0.0.1/
   enclaive-workload-bootstrap.tar.gz
   SHA256SUMS
 ```
@@ -54,16 +54,16 @@ v1.0.0/
 Cloud-init should download and verify the selected version before extracting:
 
 ```bash
-VERSION="v1.0.0"
-BASE_URL="https://github.com/enclaive/enclaive-workload-bootstrap/releases/download/$VERSION"
+VERSION="0.0.1"
+BASE_URL="https://github.com/enclaive/emcp-workload-bootstrap/releases/download/$VERSION"
 
+install -d -m 0755 /enclaive-cloud-init/bootstrap
 curl --fail --show-error --location "$BASE_URL/enclaive-workload-bootstrap.tar.gz" \
-  --output /tmp/enclaive-workload-bootstrap.tar.gz
+  --output /enclaive-cloud-init/bootstrap/bootstrap.tar.gz
 curl --fail --show-error --location "$BASE_URL/SHA256SUMS" \
-  --output /tmp/SHA256SUMS
-(cd /tmp && sha256sum --check SHA256SUMS)
-install -d -m 0755 /opt/enclaive-bootstrap
-tar -xzf /tmp/enclaive-workload-bootstrap.tar.gz -C /opt/enclaive-bootstrap
+  --output /enclaive-cloud-init/bootstrap/SHA256SUMS
+(cd /enclaive-cloud-init/bootstrap && sha256sum --check SHA256SUMS)
+tar -xzf /enclaive-cloud-init/bootstrap/bootstrap.tar.gz -C /enclaive-cloud-init/bootstrap
 ```
 
 Runtime configuration and secrets must remain in the workload's vHSM/Vault
