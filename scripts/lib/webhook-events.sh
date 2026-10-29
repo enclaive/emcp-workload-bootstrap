@@ -35,10 +35,10 @@ trigger_webhook_event() {
 
 case "${1:-}" in
   installation_completed_event)
-    trigger_webhook_event '{"type":"installation-completed"}'
+    trigger_webhook_event '{"type":"cloud-init-completed"}'
     ;;
   installation_failed_event)
-    trigger_webhook_event '{"type":"installation-failed"}'
+    trigger_webhook_event '{"type":"cloud-init-failed"}'
     ;;
   *)
     echo "Unknown event type: ${1:-}" >&2

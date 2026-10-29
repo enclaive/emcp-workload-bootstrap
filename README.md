@@ -79,8 +79,9 @@ rendered files. Scripts may read those files but must not embed their contents.
 
 ## Webhook lifecycle events
 
-`scripts/lib/webhook-events.sh` sends installation lifecycle events. It accepts
-`installation_completed_event` or `installation_failed_event` and reads the
+`scripts/lib/webhook-events.sh` sends the cloud-init outcome to the backend. It
+accepts `installation_completed_event` (posts `cloud-init-completed`) or
+`installation_failed_event` (posts `cloud-init-failed`) and reads the
 workload-specific endpoint from `WEBHOOK_URL` at runtime:
 
 ```bash
