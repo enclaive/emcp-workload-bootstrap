@@ -77,17 +77,43 @@ running the workflow.
 Runtime configuration and secrets must remain in the workload's vHSM/Vault
 rendered files. Scripts may read those files but must not embed their contents.
 
-## Webhook lifecycle events
+## Cloud-init completion
 
-`scripts/lib/webhook-events.sh` sends the cloud-init outcome to the backend. It
-accepts `installation_completed_event` (posts `cloud-init-completed`) or
-`installation_failed_event` (posts `cloud-init-failed`) and reads the
-workload-specific endpoint from `WEBHOOK_URL` at runtime:
+`scripts/lib/notify-cloud-init-completion.sh` waits for `cloud-init status
+--wait` and reports the outcome to the backend, so the resource (VM, database,
+app, cluster node) is only activated once cloud-init has finished. It maps the
+exit code to an event and sends it through `scripts/lib/webhook-events.sh`:
+
+| `cloud-init status` exit code | Event |
+|---|---|
+| `0` done | `cloud-init-completed` |
+| `2` done with recoverable errors (degraded) | `cloud-init-completed` with `"degraded": true` |
+| anything else | `cloud-init-failed` with `"exitCode"` |
+
+Start it detached once the bootstrap is on disk. It needs `WEBHOOK_URL` in its
+environment, which comes from the rendered cloud-init configuration; keep the
+URL out of this public repository and out of release artifacts:
 
 ```bash
-WEBHOOK_URL="$WEBHOOK_URL" \
-  /enclaive-cloud-init/bootstrap/scripts/lib/webhook-events.sh installation_completed_event
+WEBHOOK_URL="$WEBHOOK_URL" setsid -f bash \
+  /enclaive-cloud-init/bootstrap/scripts/lib/notify-cloud-init-completion.sh \
+  > /enclaive-cloud-init/notify-cloud-init-completion.log 2>&1
 ```
 
-Keep the URL in the rendered cloud-init configuration or another runtime-only
-file. Do not add it to this public repository or a release artifact.
+If `$ENCLAIVE_CLOUD_INIT_DIR/pre-completion-hook.sh` exists (default
+`/enclaive-cloud-init`), it runs before a success is reported. Its failure does
+not change the reported outcome.
+
+`webhook-events.sh` can also be called directly:
+
+```bash
+WEBHOOK_URL="$WEBHOOK_URL" webhook-events.sh cloud_init_completed_event [degraded]
+WEBHOOK_URL="$WEBHOOK_URL" webhook-events.sh cloud_init_failed_event [exit_code]
+```
+
+It retries up to `WEBHOOK_MAX_RETRIES` times (default 10), waiting
+`WEBHOOK_RETRY_SLEEP_SECONDS` (default 30) between attempts.
+
+Run the behavioural tests with `bash tests/notify-cloud-init-completion.test.sh`.
+They need bash, curl and python3, and use a stub `cloud-init` and a local fake
+webhook.
